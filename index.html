@@ -1,1 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>RTC - AR Frame Test</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; background: #000; font-family: sans-serif; }
+        .ui-btn {
+            position: fixed; z-index: 9999; border: none; border-radius: 50px; 
+            color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        #start-button {
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 18px 36px; background: #28a745; font-size: 18px;
+        }
+        #capture-mode-button {
+            bottom: 30px; left: 50%; transform: translateX(-50%);
+            padding: 15px 30px; background: #ff4757; font-size: 16px; display: none;
+        }
+        #return-guide {
+            position: fixed; top: 40px; width: 100%; text-align: center;
+            color: white; z-index: 9999; font-size: 14px; display: none; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <button id="start-button" class="ui-btn" onclick="startAR()">ARを開始する</button>
+    <button id="capture-mode-button" class="ui-btn" onclick="enterCaptureMode()">撮影モード（UIを隠す）</button>
+    <div id="return-guide">画面をタップしてボタンを表示</div>
 
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
+        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+        renderer="colorManagement: true, precision: medium">
+        
+        <a-assets>
+            <img id="frame-png" src="./frame.png">
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity id="t" mindar-image-target="targetIndex: 0">
+            <a-image id="ar-frame" src="#frame-png" 
+                     width="1.5" height="1.5" 
+                     position="0 0 0.1" 
+                     rotation="0 0 0" 
+                     visible="false"
+                     material="transparent: true; alphaTest: 0.5;">
+            </a-image>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        const startBtn = document.querySelector("#start-button");
+        const captureBtn = document.querySelector("#capture-mode-button");
+        const returnGuide = document.querySelector("#return-guide");
+        const targetEl = document.querySelector('#t');
+        const frameEl = document.querySelector("#ar-frame");
+
+        function startAR() {
+            const sceneEl = document.querySelector('a-scene');
+            const arSystem = sceneEl.systems["mindar-image-system"];
+            startBtn.style.display = "none";
+            captureBtn.style.display = "block";
+            arSystem.start();
+        }
+
+        function enterCaptureMode() {
+            captureBtn.style.display = "none";
+            returnGuide.style.display = "block";
+            setTimeout(() => { returnGuide.style.display = "none"; }, 2000);
+            setTimeout(() => {
+                window.addEventListener('click', exitCaptureMode, { once: true });
+            }, 500);
+        }
+
+        function exitCaptureMode() {
+            captureBtn.style.display = "block";
+        }
+
+        targetEl.addEventListener("targetFound", () => {
+            frameEl.setAttribute("visible", "true");
+        });
+        targetEl.addEventListener("targetLost", () => {
+            frameEl.setAttribute("visible", "false");
+        });
+    </script>
+</body>
+</html>
