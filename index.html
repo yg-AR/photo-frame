@@ -54,39 +54,25 @@
     </a-scene>
 
     <script>
-        const startBtn = document.querySelector("#start-button");
-        const captureBtn = document.querySelector("#capture-mode-button");
-        const returnGuide = document.querySelector("#return-guide");
         const targetEl = document.querySelector('#t');
-        const frameEl = document.querySelector("#ar-frame");
+const frameEl = document.querySelector("#ar-frame");
+const cameraEl = document.querySelector("a-camera"); // カメラを取得
 
-        function startAR() {
-            const sceneEl = document.querySelector('a-scene');
-            const arSystem = sceneEl.systems["mindar-image-system"];
-            startBtn.style.display = "none";
-            captureBtn.style.display = "block";
-            arSystem.start();
-        }
+targetEl.addEventListener("targetFound", () => {
+    // 1. フレームを可視化する
+    frameEl.setAttribute("visible", "true");
 
-        function enterCaptureMode() {
-            captureBtn.style.display = "none";
-            returnGuide.style.display = "block";
-            setTimeout(() => { returnGuide.style.display = "none"; }, 2000);
-            setTimeout(() => {
-                window.addEventListener('click', exitCaptureMode, { once: true });
-            }, 500);
-        }
+    // 2. フレームをターゲットからカメラの子供へ移動させる
+    // これにより、マーカーが外れても画面に固定される
+    cameraEl.appendChild(frameEl);
 
-        function exitCaptureMode() {
-            captureBtn.style.display = "block";
-        }
-
-        targetEl.addEventListener("targetFound", () => {
-            frameEl.setAttribute("visible", "true");
-        });
-        targetEl.addEventListener("targetLost", () => {
-            frameEl.setAttribute("visible", "false");
-        });
+    // 3. カメラからの相対位置を調整（画面に張り付く位置）
+    // zをマイナス（例: -0.5）にすると、カメラの目の前に固定されます
+    // rotationも 0 0 0 にリセットして正面に向けます
+    frameEl.setAttribute("position", "0 0 -0.5");
+    frameEl.setAttribute("rotation", "0 0 0");
+    frameEl.setAttribute("scale", "1 1 1"); // サイズもカメラに合わせて調整
+});
     </script>
 </body>
 </html>
