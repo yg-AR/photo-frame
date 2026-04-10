@@ -72,22 +72,27 @@
             arSystem.start();
         }
 
-        // ターゲット発見時の処理
-        targetEl.addEventListener("targetFound", () => {
-            if (!isFixed) {
-                frameEl.setAttribute("visible", "true");
-                
-                // 【重要】カメラの子供に移動
-                cameraEl.appendChild(frameEl);
-                
-                // カメラの正面（z = -0.5）に固定
-                frameEl.setAttribute("position", "0 0 -0.5");
-                frameEl.setAttribute("rotation", "0 0 0");
-                
-                isFixed = true;
-                showGuide("フレームを固定しました！自由に撮影してね");
-            }
-        });
+       // ターゲット発見時の処理（ここを差し替え）
+targetEl.addEventListener("targetFound", () => {
+    if (!isFixed) {
+        // 1. まず表示をオンにする
+        frameEl.setAttribute("visible", "true");
+
+        // 2. わずかに遅らせてカメラの子要素へ（安定化のため）
+        setTimeout(() => {
+            cameraEl.appendChild(frameEl);
+            
+            // 3. カメラの目の前に強制配置
+            // 数値を 0 0 -0.5 から 0 0 -1 くらいまで変えて調整してみてください
+            frameEl.setAttribute("position", "0 0 -1"); 
+            frameEl.setAttribute("rotation", "0 0 0");
+            frameEl.setAttribute("scale", "1 1 1");
+            
+            isFixed = true;
+            showGuide("フレームを固定しました！");
+        }, 100); 
+    }
+});
 
         function showGuide(msg) {
             guideText.innerText = msg;
