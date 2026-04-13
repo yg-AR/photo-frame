@@ -72,25 +72,35 @@
             arSystem.start();
         }
 
-       // ターゲット発見時の処理（ここを差し替え）
+    // ターゲット発見時の処理
 targetEl.addEventListener("targetFound", () => {
     if (!isFixed) {
-        // 1. まず表示をオンにする
+        // 1. 表示をオンにする
         frameEl.setAttribute("visible", "true");
 
-        // 2. わずかに遅らせてカメラの子要素へ（安定化のため）
+        // 2. 0.1秒待ってから移動と「固定」を確定させる
         setTimeout(() => {
             cameraEl.appendChild(frameEl);
             
-            // 3. カメラの目の前に強制配置
-            // 数値を 0 0 -0.5 から 0 0 -1 くらいまで変えて調整してみてください
+            // カメラの目の前に固定（少し遠めに -1 を設定）
             frameEl.setAttribute("position", "0 0 -1"); 
             frameEl.setAttribute("rotation", "0 0 0");
             frameEl.setAttribute("scale", "1 1 1");
             
+            // 重要：Mind-ARの自動制御から外すためクラス名を消す（もしあれば）
+            frameEl.classList.remove("ar-elements"); 
+
             isFixed = true;
             showGuide("フレームを固定しました！");
         }, 100); 
+    }
+});
+
+// ターゲット喪失時の処理
+targetEl.addEventListener("targetLost", () => {
+    // 【ここを修正】固定されていない時だけ非表示にする
+    if (!isFixed) {
+        frameEl.setAttribute("visible", "false");
     }
 });
 
