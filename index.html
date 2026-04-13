@@ -1,43 +1,49 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-</head>
-<body style="margin: 0; overflow: hidden;">
-    <button style="position:fixed; z-index:99; top:20px; left:20px; padding:20px;" onclick="startAR()">AR開始</button>
+<a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;">
+    <a-assets>
+        <img id="f-img" src="./frame.png">
+    </a-assets>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;">
-        <a-assets>
-            <img id="f-img" src="./frame.png">
-        </a-assets>
+    <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
+        <a-image id="fixed-frame" src="#f-img" 
+                 width="1" height="1.5" 
+                 position="0 0 -0.5" 
+                 visible="false"
+                 material="shader: flat; transparent: true;">
+        </a-image>
+    </a-camera>
 
-        <a-camera position="0 0 0" look-controls="enabled: false" far="1000" near="0.01">
-            <a-image id="target-frame" src="#f-img" 
-                     width="1" height="1.5" 
-                     position="0 0 -0.5" 
-                     visible="false"
-                     material="shader: flat; transparent: true; side: double;">
-            </a-image>
-        </a-camera>
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
+        <a-image id="follower-frame" src="#f-img" 
+                 width="1" height="1.5" 
+                 position="0 0 0.1" 
+                 visible="false"
+                 material="shader: flat; transparent: true;">
+        </a-image>
+    </a-entity>
+</a-scene>
 
-        <a-entity id="target" mindar-image-target="targetIndex: 0"></a-entity>
-    </a-scene>
+<script>
+    const target = document.querySelector('#target');
+    const follower = document.querySelector('#follower-frame');
+    const fixed = document.querySelector('#fixed-frame');
+    let hasBeenFound = false; // 一度でも見つけたか
 
-    <script>
-        function startAR() {
-            document.querySelector('a-scene').systems["mindar-image-system"].start();
+    target.addEventListener("targetFound", () => {
+        if (!hasBeenFound) {
+            // 最初に見つけた瞬間だけ「固定用」に切り替える
+            fixed.setAttribute("visible", "true");
+            follower.setAttribute("visible", "false"); // 追従用は消す
+            hasBeenFound = true; 
+            
+            // UI表示などの処理
+            document.querySelector("#capture-mode-button").style.display = "block";
         }
+    });
 
-        const target = document.querySelector('#target');
-        const frame = document.querySelector('#target-frame');
-
-        target.addEventListener("targetFound", () => {
-            console.log("ターゲットを見つけました");
-            // 認識した瞬間に、無理やり表示を固定する
-            frame.setAttribute("visible", "true");
-        });
-    </script>
-</body>
-</html>
+    target.addEventListener("targetLost", () => {
+        // 固定済みなら何もしない（カメラ側のフレームは消えない）
+        if (!hasBeenFound) {
+            follower.setAttribute("visible", "false");
+        }
+    });
+</script>
