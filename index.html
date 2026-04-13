@@ -25,7 +25,7 @@
             <img id="frame-png" src="./frame.png">
         </a-assets>
 
-        <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false"></a-camera>
+       <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false" raycaster="objects: .none" far="10000" near="0.01"></a-camera>
 
         <a-image id="ar-frame" src="#frame-png" 
                  width="1" height="1.8" 
