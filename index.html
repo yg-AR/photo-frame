@@ -41,14 +41,15 @@
             <img id="frame-png" src="./frame.png">
         </a-assets>
 
-       <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
-    <a-image id="ar-frame" src="#frame-png" 
-             width="1" height="1" 
-             position="0 0 -0.5" 
-             rotation="0 0 0" 
-             visible="false"
-             material="transparent: true; alphaTest: 0.5;">
-    </a-image>
+     <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
+    <a-entity id="camera-fixed-container">
+        <a-image id="ar-frame" src="#frame-png" 
+                 width="1" height="1" 
+                 position="0 0 -1"  rotation="0 0 0" 
+                 visible="false"
+                 material="transparent: true; alphaTest: 0.5;">
+        </a-image>
+    </a-entity>
 </a-camera>
 
 <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
@@ -75,10 +76,13 @@
 
     // ターゲット発見時の処理
 targetEl.addEventListener("targetFound", () => {
-    // 認識したら、カメラの中にあるフレームを表示するだけ！
-    // Mind-ARの「見失ったら消す」命令の影響を受けなくなります
+    // 1. 表示をオン
     frameEl.setAttribute("visible", "true");
     
+    // 2. 認識した瞬間に、改めてカメラ正面の位置を叩き込む（強制描画）
+    frameEl.setAttribute("position", "0 0 -1");
+    frameEl.setAttribute("scale", "1 1 1");
+
     if (!isFixed) {
         showGuide("フレームを固定しました！");
         isFixed = true;
