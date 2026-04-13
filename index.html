@@ -3,113 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>RTC - Fixed Frame AR</title>
+    <title>RTC - Fixed Frame Ultimate</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
         body { margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; background: #000; font-family: sans-serif; }
-        .ui-btn {
-            position: fixed; z-index: 9999; border: none; border-radius: 50px; 
-            color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        #start-button {
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 18px 36px; background: #28a745; font-size: 18px;
-        }
-        #capture-mode-button {
-            bottom: 30px; left: 50%; transform: translateX(-50%);
-            padding: 15px 30px; background: #ff4757; font-size: 16px; display: none;
-        }
-        #guide-text {
-            position: fixed; top: 40px; width: 100%; text-align: center;
-            color: white; z-index: 9999; font-size: 14px; display: none; pointer-events: none;
-            background: rgba(0,0,0,0.5); padding: 5px 0;
-        }
+        .ui-btn { position: fixed; z-index: 9999; border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; }
+        #start-button { top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 18px 36px; background: #28a745; }
+        #capture-mode-button { bottom: 30px; left: 50%; transform: translateX(-50%); padding: 15px 30px; background: #ff4757; display: none; }
     </style>
 </head>
 <body>
     <button id="start-button" class="ui-btn" onclick="startAR()">ARを開始する</button>
-    <button id="capture-mode-button" class="ui-btn" onclick="enterCaptureMode()">撮影モード（UI隠し）</button>
-    <div id="guide-text"></div>
+    <button id="capture-mode-button" class="ui-btn" onclick="enterCaptureMode()">撮影モード</button>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
-        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
-        renderer="colorManagement: true, precision: medium">
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
+        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
             <img id="frame-png" src="./frame.png">
         </a-assets>
 
-     <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
-    <a-entity id="camera-fixed-container">
+        <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false"></a-camera>
+
         <a-image id="ar-frame" src="#frame-png" 
-                 width="2" height="2" 
-                 position="0 0 -2"  rotation="0 0 0" 
+                 width="1" height="1.8" 
+                 position="0 0 -1" 
                  visible="false"
                  material="transparent: true; alphaTest: 0.5; side: double;">
         </a-image>
-    </a-entity>
-</a-camera>
 
-<a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-    </a-entity>
+        <a-entity id="target-entity" mindar-image-target="targetIndex: 0"></a-entity>
     </a-scene>
 
     <script>
-        const startBtn = document.querySelector("#start-button");
-        const captureBtn = document.querySelector("#capture-mode-button");
-        const guideText = document.querySelector("#guide-text");
         const targetEl = document.querySelector('#target-entity');
         const frameEl = document.querySelector("#ar-frame");
         const cameraEl = document.querySelector("#main-camera");
-
-        let isFixed = false; // カメラ固定済みかどうかのフラグ
+        let isFixed = false;
 
         function startAR() {
-            const sceneEl = document.querySelector('a-scene');
-            const arSystem = sceneEl.systems["mindar-image-system"];
-            startBtn.style.display = "none";
-            captureBtn.style.display = "block";
-            arSystem.start();
+            document.querySelector('a-scene').systems["mindar-image-system"].start();
+            document.querySelector("#start-button").style.display = "none";
+            document.querySelector("#capture-mode-button").style.display = "block";
         }
 
-    // ターゲット発見時の処理
-targetEl.addEventListener("targetFound", () => {
-    // 1. 表示をオン
-    frameEl.setAttribute("visible", "true");
-    
-    // 2. 認識した瞬間に、改めてカメラ正面の位置を叩き込む（強制描画）
-    frameEl.setAttribute("position", "0 0 -1");
-    frameEl.setAttribute("scale", "1 1 1");
-
-    if (!isFixed) {
-        showGuide("フレームを固定しました！");
-        isFixed = true;
-    }
-});
-
-// targetLost の処理は、フレームを出しっぱなしにしたいなら「何もしない」でOK
-targetEl.addEventListener("targetLost", () => {
-    // 何もしない = フレームは表示されたままになる
-});
-
-        function showGuide(msg) {
-            guideText.innerText = msg;
-            guideText.style.display = "block";
-            setTimeout(() => { guideText.style.display = "none"; }, 3000);
+        // 毎フレーム実行される処理で、フレームをカメラの前に張り付かせる
+        function updateFramePosition() {
+            if (isFixed) {
+                // カメラの世界座標と回転をそのままコピーする
+                const position = cameraEl.object3D.position;
+                const rotation = cameraEl.object3D.rotation;
+                
+                // カメラの正面1m先に配置するための計算（簡易版）
+                frameEl.object3D.position.copy(position);
+                frameEl.object3D.rotation.copy(rotation);
+                frameEl.object3D.translateZ(-1); 
+            }
+            requestAnimationFrame(updateFramePosition);
         }
+        updateFramePosition();
+
+        targetEl.addEventListener("targetFound", () => {
+            frameEl.setAttribute("visible", "true");
+            isFixed = true; // これでカメラへの同期が始まる
+        });
 
         function enterCaptureMode() {
-            captureBtn.style.display = "none";
-            showGuide("画面タップでボタンを表示");
-            setTimeout(() => {
-                window.addEventListener('click', exitCaptureMode, { once: true });
-            }, 500);
-        }
-
-        function exitCaptureMode() {
-            captureBtn.style.display = "block";
+            document.querySelector("#capture-mode-button").style.display = "none";
+            window.addEventListener('click', () => {
+                document.querySelector("#capture-mode-button").style.display = "block";
+            }, { once: true });
         }
     </script>
 </body>
