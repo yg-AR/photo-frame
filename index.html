@@ -41,17 +41,18 @@
             <img id="frame-png" src="./frame.png">
         </a-assets>
 
-        <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false"></a-camera>
+       <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
+    <a-image id="ar-frame" src="#frame-png" 
+             width="1" height="1" 
+             position="0 0 -0.5" 
+             rotation="0 0 0" 
+             visible="false"
+             material="transparent: true; alphaTest: 0.5;">
+    </a-image>
+</a-camera>
 
-        <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-            <a-image id="ar-frame" src="#frame-png" 
-                     width="1.5" height="1.5" 
-                     position="0 0 0.1" 
-                     rotation="0 0 0" 
-                     visible="false"
-                     material="transparent: true; alphaTest: 0.5;">
-            </a-image>
-        </a-entity>
+<a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+    </a-entity>
     </a-scene>
 
     <script>
@@ -74,34 +75,19 @@
 
     // ターゲット発見時の処理
 targetEl.addEventListener("targetFound", () => {
+    // 認識したら、カメラの中にあるフレームを表示するだけ！
+    // Mind-ARの「見失ったら消す」命令の影響を受けなくなります
+    frameEl.setAttribute("visible", "true");
+    
     if (!isFixed) {
-        // 1. 表示をオンにする
-        frameEl.setAttribute("visible", "true");
-
-        // 2. 0.1秒待ってから移動と「固定」を確定させる
-        setTimeout(() => {
-            cameraEl.appendChild(frameEl);
-            
-            // カメラの目の前に固定（少し遠めに -1 を設定）
-            frameEl.setAttribute("position", "0 0 -2"); 
-            frameEl.setAttribute("rotation", "0 0 0");
-            frameEl.setAttribute("scale", "1 1 1");
-            
-            // 重要：Mind-ARの自動制御から外すためクラス名を消す（もしあれば）
-            frameEl.classList.remove("ar-elements"); 
-
-            isFixed = true;
-            showGuide("フレームを固定しました！");
-        }, 100); 
+        showGuide("フレームを固定しました！");
+        isFixed = true;
     }
 });
 
-// ターゲット喪失時の処理
+// targetLost の処理は、フレームを出しっぱなしにしたいなら「何もしない」でOK
 targetEl.addEventListener("targetLost", () => {
-    // 【ここを修正】固定されていない時だけ非表示にする
-    if (!isFixed) {
-        frameEl.setAttribute("visible", "false");
-    }
+    // 何もしない = フレームは表示されたままになる
 });
 
         function showGuide(msg) {
