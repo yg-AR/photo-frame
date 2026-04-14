@@ -3,28 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>RTC - AR Frame Reset</title>
+    <title>RTC - AR Fix</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; background: #000; font-family: sans-serif; }
-        
-        /* ボタンを最前面に配置 */
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         .ui-btn {
             position: fixed; z-index: 9999; border: none; border-radius: 50px; 
-            color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            color: white; font-weight: bold; cursor: pointer;
         }
-
-        /* 開始ボタン */
         #start-button {
             top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 18px 36px; background: linear-gradient(135deg, #28a745, #218838); font-size: 18px;
+            padding: 18px 36px; background: #28a745; font-size: 18px;
         }
-
-        /* 撮影モードボタン */
         #cap-btn {
             bottom: 30px; left: 50%; transform: translateX(-50%);
-            padding: 15px 30px; background: #ff4757; font-size: 16px; display: none;
+            padding: 15px 30px; background: #ff4757; display: none;
         }
     </style>
 </head>
@@ -32,57 +26,55 @@
     <button id="start-button" class="ui-btn" onclick="startAR()">ARを開始する</button>
     <button id="cap-btn" class="ui-btn" onclick="toggleUI()">UIを隠して撮影</button>
 
-    <a-scene> 
-        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
-        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
-        renderer="colorManagement: true, precision: medium">
-        
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" vr-mode-ui="enabled: false">
         <a-assets>
             <img id="frame-png" src="./frame.png">
         </a-assets>
 
-      <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false"></a-camera>
 
-<a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-    <a-image id="ar-frame" src="#frame-png" 
-             width="1.5" height="1.5" 
-             position="0 0 0" 
-             visible="false"
-             material="transparent: true; shader: flat;">
-    </a-image>
-</a-entity>
+        <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+            <a-image id="ar-frame" src="#frame-png" 
+                     width="1.5" height="2.5" 
+                     position="0 0 0.01" 
+                     visible="false"
+                     material="transparent: true; shader: flat;">
+            </a-image>
+        </a-entity>
     </a-scene>
 
-  <script>
-    window.addEventListener('load', () => {
-        const targetEl = document.querySelector('#target-entity');
-        const frameEl = document.querySelector("#ar-frame");
-        const cameraEl = document.querySelector("#main-camera");
-        const capBtn = document.querySelector("#cap-btn");
+    <script>
+        // ボタンの関数を、ブラウザがいつでも見つけられる場所に登録
+        window.startAR = function() {
+            const sceneEl = document.querySelector('a-scene');
+            if (sceneEl.systems["mindar-image-system"]) {
+                sceneEl.systems["mindar-image-system"].start();
+                document.getElementById("start-button").style.display = "none";
+            }
+        };
 
-        targetEl.addEventListener("targetFound", () => {
-            // 【重要】ターゲットを見つけた瞬間に実行
-            
-            // 1. フレームをターゲットの中から「カメラの中」へ強制移動
-            cameraEl.appendChild(frameEl);
-            
-            // 2. 移動した瞬間に、画面中央にくるよう座標をリセット
-            frameEl.setAttribute("position", "0 0 -1");
-            frameEl.setAttribute("rotation", "0 0 0");
-            frameEl.setAttribute("scale", "1.2 2.2 1"); // 画面いっぱいに広げる
-            
-            // 3. 表示をオンにする
-            frameEl.setAttribute("visible", "true");
-            capBtn.style.display = "block";
-            
-            console.log("移動完了：カメラに固定しました");
+        window.toggleUI = function() {
+            const btn = document.getElementById("cap-btn");
+            btn.style.display = "none";
+            setTimeout(() => {
+                window.addEventListener('click', () => {
+                    btn.style.display = "block";
+                }, { once: true });
+            }, 500);
+        };
+
+        // シーンの準備ができるまで待ってからリスナーを付ける
+        document.addEventListener("DOMContentLoaded", () => {
+            const targetEl = document.querySelector('#target-entity');
+            const frameEl = document.querySelector("#ar-frame");
+            const capBtn = document.querySelector("#cap-btn");
+
+            targetEl.addEventListener("targetFound", () => {
+                console.log("ターゲット発見");
+                frameEl.setAttribute("visible", "true");
+                capBtn.style.display = "block";
+            });
         });
-    });
-
-    function startAR() {
-        document.querySelector('a-scene').systems["mindar-image-system"].start();
-        document.querySelector("#start-button").style.display = "none";
-    }
-</script>
+    </script>
 </body>
 </html>
