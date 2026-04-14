@@ -56,41 +56,43 @@
     </a-scene>
 
    <script>
-    const targetEl = document.querySelector('#target-entity');
-    const frameEl = document.querySelector("#ar-frame");
-    const capBtn = document.querySelector("#cap-btn");
+    // ページ全体が完全に読み込まれるのを待つ
+    window.addEventListener('load', () => {
+        const targetEl = document.querySelector('#target-entity');
+        const frameEl = document.querySelector("#ar-frame");
+        const capBtn = document.querySelector("#cap-btn");
+        const sceneEl = document.querySelector('a-scene');
 
-    // ターゲット認識時の挙動
-    targetEl.addEventListener("targetFound", () => {
-        // 1. カメラの中にあるフレームを表示する
-        frameEl.setAttribute("visible", "true");
-        
-        // 2. 撮影ボタンを表示
-        capBtn.style.display = "block";
-        
-        console.log("ターゲット認識：フレームを表示しました");
-    });
+        // ターゲット認識時の挙動
+        targetEl.addEventListener("targetFound", () => {
+            console.log("ターゲット認識！");
+            
+            // 強制的に visible を true にし、さらに A-Frame の内部データも更新する
+            frameEl.setAttribute("visible", "true");
+            
+            // もしこれでも出ない場合のための「念押し」：
+            // カメラの目の前に再度位置を叩き込む
+            frameEl.setAttribute("position", "0 0 -1");
+            
+            capBtn.style.display = "block";
+        });
 
-    // ターゲット紛失時（targetLost）
-    targetEl.addEventListener("targetLost", () => {
-        // ここを空にすることで、一度表示されたフレームは消えなくなります
+        // AR開始ボタンの処理
+        window.startAR = function() {
+            sceneEl.systems["mindar-image-system"].start();
+            document.querySelector("#start-button").style.display = "none";
+        };
+
+        // UI切り替え
+        window.toggleUI = function() {
+            capBtn.style.display = "none";
+            setTimeout(() => {
+                window.addEventListener('click', () => {
+                    capBtn.style.display = "block";
+                }, { once: true });
+            }, 500);
+        };
     });
-    
-    // AR開始関数などはそのまま
-    function startAR() {
-        document.querySelector('a-scene').systems["mindar-image-system"].start();
-        document.querySelector("#start-button").style.display = "none";
-    }
-    
-    // UI切り替え関数もそのまま
-    function toggleUI() {
-        capBtn.style.display = "none";
-        setTimeout(() => {
-            window.addEventListener('click', () => {
-                capBtn.style.display = "block";
-            }, { once: true });
-        }, 500);
-    }
 </script>
 </body>
 </html>
