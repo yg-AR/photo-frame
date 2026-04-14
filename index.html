@@ -41,54 +41,56 @@
             <img id="frame-png" src="./frame.png">
         </a-assets>
 
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+       <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
+    <a-image id="ar-frame" src="#frame-png" 
+             width="1.1" height="2.0" 
+             position="0 0 -1" 
+             rotation="0 0 0" 
+             visible="false"
+             material="transparent: true; shader: flat; side: double;">
+    </a-image>
+</a-camera>
 
-        <a-entity id="t" mindar-image-target="targetIndex: 0">
-            <a-image id="ar-frame" src="#frame-png" 
-                     width="1.5" height="1.5" 
-                     position="0 0 0.1" 
-                     rotation="0 0 0" 
-                     visible="false"
-                     material="transparent: true; alphaTest: 0.5; side: double;">
-            </a-image>
-        </a-entity>
+<a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+</a-entity>
     </a-scene>
 
-    <script>
-        const startBtn = document.querySelector("#start-button");
-        const capBtn = document.querySelector("#cap-btn");
-        const targetEl = document.querySelector('#t');
-        const frameEl = document.querySelector("#ar-frame");
+   <script>
+    const targetEl = document.querySelector('#target-entity');
+    const frameEl = document.querySelector("#ar-frame");
+    const capBtn = document.querySelector("#cap-btn");
 
-        // AR起動
-        function startAR() {
-            const sceneEl = document.querySelector('a-scene');
-            sceneEl.systems["mindar-image-system"].start();
-            startBtn.style.display = "none";
-            // 撮影ボタンはスキャン開始時に出す（認識した時に出す設定も可）
-            capBtn.style.display = "block";
-        }
+    // ターゲット認識時の挙動
+    targetEl.addEventListener("targetFound", () => {
+        // 1. カメラの中にあるフレームを表示する
+        frameEl.setAttribute("visible", "true");
+        
+        // 2. 撮影ボタンを表示
+        capBtn.style.display = "block";
+        
+        console.log("ターゲット認識：フレームを表示しました");
+    });
 
-        // 撮影モード（UI隠し）
-        function toggleUI() {
-            capBtn.style.display = "none";
-            // 画面のどこかをタップしたらボタンを戻す
-            setTimeout(() => {
-                window.addEventListener('click', () => {
-                    capBtn.style.display = "block";
-                }, { once: true });
-            }, 500);
-        }
-
-        // ターゲット認識時の挙動
-        targetEl.addEventListener("targetFound", () => {
-            frameEl.setAttribute("visible", "true");
-        });
-
-        // ターゲット紛失時の挙動
-        targetEl.addEventListener("targetLost", () => {
-            frameEl.setAttribute("visible", "false");
-        });
-    </script>
+    // ターゲット紛失時（targetLost）
+    targetEl.addEventListener("targetLost", () => {
+        // ここを空にすることで、一度表示されたフレームは消えなくなります
+    });
+    
+    // AR開始関数などはそのまま
+    function startAR() {
+        document.querySelector('a-scene').systems["mindar-image-system"].start();
+        document.querySelector("#start-button").style.display = "none";
+    }
+    
+    // UI切り替え関数もそのまま
+    function toggleUI() {
+        capBtn.style.display = "none";
+        setTimeout(() => {
+            window.addEventListener('click', () => {
+                capBtn.style.display = "block";
+            }, { once: true });
+        }, 500);
+    }
+</script>
 </body>
 </html>
