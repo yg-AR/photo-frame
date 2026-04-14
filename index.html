@@ -3,24 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RTC - AR Final Solution</title>
+    <title>RTC - AR Final Fix</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        .ui-btn { position: fixed; z-index: 999; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 15px 30px; background: #28a745; color: white; border: none; border-radius: 50px; cursor: pointer; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        /* ボタンを絶対最前面に */
+        .ui-btn { 
+            position: fixed; z-index: 99999; 
+            padding: 15px 30px; border: none; border-radius: 50px; 
+            color: white; font-weight: bold; cursor: pointer; 
+        }
+        #start-btn { 
+            top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: #28a745; font-size: 18px; 
+        }
+        #cap-btn { 
+            bottom: 30px; left: 50%; transform: translateX(-50%); 
+            background: #ff4757; display: none; /* 最初は隠す */
+        }
     </style>
 </head>
 <body>
-    <button id="start-btn" style="position:fixed; z-index:1000; top:50%; left:50%; transform:translate(-50%,-50%); padding:20px;" onclick="startAR()">ARスキャンを開始</button>
-    <button id="cap-btn" class="ui-btn" style="display:none;" onclick="this.style.display='none'">UIを隠して撮影</button>
+    <button id="start-btn" class="ui-btn" onclick="startAR()">ARスキャンを開始</button>
+    <button id="cap-btn" class="ui-btn" onclick="enterCaptureMode()">UIを隠して撮影</button>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;">
         <a-assets>
             <img id="f-img" src="./frame.png">
         </a-assets>
 
-        <a-camera id="main-cam" look-controls="enabled: false"></a-camera>
+        <a-camera id="main-cam" look-controls="enabled: false" wasd-controls-enabled="false"></a-camera>
 
         <a-entity id="target-ent" mindar-image-target="targetIndex: 0"></a-entity>
 
@@ -32,41 +46,52 @@
     </a-scene>
 
     <script>
+        const startBtn = document.querySelector("#start-btn");
+        const capBtn = document.querySelector("#cap-btn");
         const frameEl = document.querySelector('#ar-frame');
         const cameraEl = document.querySelector('#main-cam');
         const targetEl = document.querySelector('#target-ent');
-        let isFound = false;
+        
+        let isFixed = false;
 
+        // AR起動
         function startAR() {
-            document.querySelector('a-scene').systems["mindar-image-system"].start();
-            document.querySelector("#start-btn").style.display = "none";
+            const sceneEl = document.querySelector('a-scene');
+            sceneEl.systems["mindar-image-system"].start();
+            startBtn.style.display = "none";
         }
 
         // 認識した時の処理
         targetEl.addEventListener("targetFound", () => {
-            if (!isFound) {
-                // 1. 表示をオンにする
+            if (!isFixed) {
+                // 1. フレームをカメラの子供にする（この移動が一番確実）
+                cameraEl.appendChild(frameEl);
+                
+                // 2. 位置と表示を確定
+                frameEl.setAttribute("position", "0 0 -1");
                 frameEl.setAttribute("visible", "true");
                 
-                // 2. フレームをカメラの「直前」に配置する命令
-                // 親子関係を作らず、この瞬間にカメラの子要素のような振る舞いをさせる
-                frameEl.setAttribute('mindar-image-target', ''); // ターゲットとの紐付けを解除
-                cameraEl.appendChild(frameEl); // 起動後ならこの移動は安全
-                
-                frameEl.setAttribute("position", "0 0 -1");
-                frameEl.setAttribute("rotation", "0 0 0");
-
-                document.querySelector("#cap-btn").style.display = "block";
-                isFound = true;
+                // 3. ボタンを表示
+                capBtn.style.display = "block";
+                isFixed = true;
+                console.log("Frame Fixed!");
             }
         });
 
-        // 撮影モードから戻るための画面クリック
-        window.addEventListener('click', (e) => {
-            if(e.target.id !== 'start-btn') {
-                document.querySelector("#cap-btn").style.display = "block";
-            }
-        });
+        // 撮影モード（UIを隠す）
+        function enterCaptureMode() {
+            capBtn.style.display = "none";
+            
+            // 画面のどこかをタップしたらボタンを戻す
+            // 誤作動を防ぐため、少し遅らせてリスナーを追加
+            setTimeout(() => {
+                window.addEventListener('click', exitCaptureMode, { once: true });
+            }, 500);
+        }
+
+        function exitCaptureMode() {
+            capBtn.style.display = "block";
+        }
     </script>
 </body>
 </html>
