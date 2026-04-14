@@ -2,99 +2,93 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RTC - AR Final Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>RTC - AR Frame Reset</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; background: #000; font-family: sans-serif; }
         
-        /* ボタンを絶対最前面に */
-        .ui-btn { 
-            position: fixed; z-index: 99999; 
-            padding: 15px 30px; border: none; border-radius: 50px; 
-            color: white; font-weight: bold; cursor: pointer; 
+        /* ボタンを最前面に配置 */
+        .ui-btn {
+            position: fixed; z-index: 9999; border: none; border-radius: 50px; 
+            color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        #start-btn { 
-            top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: #28a745; font-size: 18px; 
+
+        /* 開始ボタン */
+        #start-button {
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 18px 36px; background: linear-gradient(135deg, #28a745, #218838); font-size: 18px;
         }
-        #cap-btn { 
-            bottom: 30px; left: 50%; transform: translateX(-50%); 
-            background: #ff4757; display: none; /* 最初は隠す */
+
+        /* 撮影モードボタン */
+        #cap-btn {
+            bottom: 30px; left: 50%; transform: translateX(-50%);
+            padding: 15px 30px; background: #ff4757; font-size: 16px; display: none;
         }
     </style>
 </head>
 <body>
-    <button id="start-btn" class="ui-btn" onclick="startAR()">ARスキャンを開始</button>
-    <button id="cap-btn" class="ui-btn" onclick="enterCaptureMode()">UIを隠して撮影</button>
+    <button id="start-button" class="ui-btn" onclick="startAR()">ARを開始する</button>
+    <button id="cap-btn" class="ui-btn" onclick="toggleUI()">UIを隠して撮影</button>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;">
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
+        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+        renderer="colorManagement: true, precision: medium">
+        
         <a-assets>
-            <img id="f-img" src="./frame.png">
+            <img id="frame-png" src="./frame.png">
         </a-assets>
 
-        <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
-    <a-image id="ar-frame" src="#frame-png" 
-             width="1" height="1.8" 
-             position="0 0 -1" 
-             rotation="0 0 0" 
-             visible="false"
-             material="shader: flat; transparent: true; side: double;">
-    </a-image>
-</a-camera>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-<a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-    </a-entity>
+        <a-entity id="t" mindar-image-target="targetIndex: 0">
+            <a-image id="ar-frame" src="#frame-png" 
+                     width="1.5" height="1.5" 
+                     position="0 0 0.1" 
+                     rotation="0 0 0" 
+                     visible="false"
+                     material="transparent: true; alphaTest: 0.5; side: double;">
+            </a-image>
+        </a-entity>
     </a-scene>
 
     <script>
-        const startBtn = document.querySelector("#start-btn");
+        const startBtn = document.querySelector("#start-button");
         const capBtn = document.querySelector("#cap-btn");
-        const frameEl = document.querySelector('#ar-frame');
-        const cameraEl = document.querySelector('#main-cam');
-        const targetEl = document.querySelector('#target-ent');
-        
-        let isFixed = false;
+        const targetEl = document.querySelector('#t');
+        const frameEl = document.querySelector("#ar-frame");
 
         // AR起動
         function startAR() {
             const sceneEl = document.querySelector('a-scene');
             sceneEl.systems["mindar-image-system"].start();
             startBtn.style.display = "none";
+            // 撮影ボタンはスキャン開始時に出す（認識した時に出す設定も可）
+            capBtn.style.display = "block";
         }
 
-       // ターゲット発見時の処理
-targetEl.addEventListener("targetFound", () => {
-    // 認識したら、カメラの中にあるフレームを表示するだけ！
-    // Mind-ARの「見失ったら消す」命令の影響を受けなくなります
-    frameEl.setAttribute("visible", "true");
-    
-    if (!isFixed) {
-        // ボタンを表示
-        document.querySelector("#cap-btn").style.display = "block";
-        isFixed = true;
-    }
-});
-
-// targetLost の処理は不要（フレームを出しっぱなしにしたいなら「何もしない」でOK）
-targetEl.addEventListener("targetLost", () => {
-    // 何もしない = フレームは表示されたままになる
-});
-        // 撮影モード（UIを隠す）
-        function enterCaptureMode() {
+        // 撮影モード（UI隠し）
+        function toggleUI() {
             capBtn.style.display = "none";
-            
             // 画面のどこかをタップしたらボタンを戻す
-            // 誤作動を防ぐため、少し遅らせてリスナーを追加
             setTimeout(() => {
-                window.addEventListener('click', exitCaptureMode, { once: true });
+                window.addEventListener('click', () => {
+                    capBtn.style.display = "block";
+                }, { once: true });
             }, 500);
         }
 
-        function exitCaptureMode() {
-            capBtn.style.display = "block";
-        }
+        // ターゲット認識時の挙動
+        targetEl.addEventListener("targetFound", () => {
+            frameEl.setAttribute("visible", "true");
+        });
+
+        // ターゲット紛失時の挙動
+        targetEl.addEventListener("targetLost", () => {
+            frameEl.setAttribute("visible", "false");
+        });
     </script>
 </body>
 </html>
