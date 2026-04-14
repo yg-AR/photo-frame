@@ -34,15 +34,18 @@
             <img id="f-img" src="./frame.png">
         </a-assets>
 
-        <a-camera id="main-cam" look-controls="enabled: false" wasd-controls-enabled="false"></a-camera>
+        <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false">
+    <a-image id="ar-frame" src="#frame-png" 
+             width="1" height="1.8" 
+             position="0 0 -1" 
+             rotation="0 0 0" 
+             visible="false"
+             material="shader: flat; transparent: true; side: double;">
+    </a-image>
+</a-camera>
 
-        <a-entity id="target-ent" mindar-image-target="targetIndex: 0"></a-entity>
-
-        <a-image id="ar-frame" src="#f-img" 
-                 width="1" height="1.8" 
-                 visible="false"
-                 material="shader: flat; transparent: true; side: double;">
-        </a-image>
+<a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+    </a-entity>
     </a-scene>
 
     <script>
@@ -61,23 +64,23 @@
             startBtn.style.display = "none";
         }
 
-        // 認識した時の処理
-        targetEl.addEventListener("targetFound", () => {
-            if (!isFixed) {
-                // 1. フレームをカメラの子供にする（この移動が一番確実）
-                cameraEl.appendChild(frameEl);
-                
-                // 2. 位置と表示を確定
-                frameEl.setAttribute("position", "0 0 -1");
-                frameEl.setAttribute("visible", "true");
-                
-                // 3. ボタンを表示
-                capBtn.style.display = "block";
-                isFixed = true;
-                console.log("Frame Fixed!");
-            }
-        });
+       // ターゲット発見時の処理
+targetEl.addEventListener("targetFound", () => {
+    // 認識したら、カメラの中にあるフレームを表示するだけ！
+    // Mind-ARの「見失ったら消す」命令の影響を受けなくなります
+    frameEl.setAttribute("visible", "true");
+    
+    if (!isFixed) {
+        // ボタンを表示
+        document.querySelector("#cap-btn").style.display = "block";
+        isFixed = true;
+    }
+});
 
+// targetLost の処理は不要（フレームを出しっぱなしにしたいなら「何もしない」でOK）
+targetEl.addEventListener("targetLost", () => {
+    // 何もしない = フレームは表示されたままになる
+});
         // 撮影モード（UIを隠す）
         function enterCaptureMode() {
             capBtn.style.display = "none";
