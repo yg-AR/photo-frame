@@ -6,6 +6,7 @@
     <title>RTC - AR Fix</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         .ui-btn {
@@ -36,12 +37,13 @@
         <a-camera id="main-camera" position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-            <a-image id="ar-frame" src="#frame-png" 
-                     width="5.0" height="8.0" 
-                     position="0 0 0.01" 
-                     visible="false"
-                     material="transparent: true; shader: flat;">
-            </a-image>
+           <a-image id="ar-frame" src="#frame-png" 
+         width="5.0" height="8.0" 
+         position="0 0 0.1" 
+         visible="false"
+         look-at="[camera]"
+         material="transparent: true; shader: flat;">
+　　　　　</a-image>
         </a-entity>
     </a-scene>
 
