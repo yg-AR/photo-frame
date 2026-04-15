@@ -26,7 +26,9 @@
     <button id="start-button" class="ui-btn" onclick="startAR()">ARを開始する</button>
     <button id="cap-btn" class="ui-btn" onclick="toggleUI()">UIを隠して撮影</button>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" vr-mode-ui="enabled: false">
+    <a-scene 
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes; filterMinCF: 0.001; filterBeta: 1000;" 
+    ... >
         <a-assets>
             <img id="frame-png" src="./frame.png">
         </a-assets>
